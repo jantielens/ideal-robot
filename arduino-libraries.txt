@@ -17,4 +17,9 @@
 # WiFi
 # ArduinoJson
 
+# E-ink display with LVGL support
+GxEPD2@1.6.0
+lvgl@9.2.2
+Adafruit GFX Library
+
 # Add additional libraries below:

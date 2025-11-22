@@ -1,8 +1,8 @@
-# Copilot Instructions for ESP32 Template Project
+# Copilot Instructions for ESP32 E-Paper Sample Project
 
 ## Project Overview
 
-ESP32 Arduino development template using `arduino-cli` for headless builds. Designed for WSL2/Linux environments with local toolchain installation (no system dependencies).
+Sample project demonstrating ESP32 + WeAct Studio 1.54" E-Paper Module + LVGL integration. Uses `arduino-cli` for headless builds. Designed for WSL2/Linux environments with local toolchain installation (no system dependencies).
 
 ## Architecture
 
@@ -61,10 +61,13 @@ See `docs/wsl-development.md` for complete USB/IP setup guide.
 - `library.sh` - Manages Arduino library dependencies
 
 ### Source
-- `src/app/app.ino` - Single sketch file (standard Arduino structure)
+- `src/app/app.ino` - Main application (UI creation, update logic)
+- `src/app/eink_display.h` - Display driver interface
+- `src/app/eink_display.ino` - E-ink + LVGL integration layer
 - `src/version.h` - Firmware version tracking
 
 ### Configuration
+- `lv_conf.h` - LVGL configuration (optimized for e-ink)
 - `arduino-libraries.txt` - List of required Arduino libraries (auto-installed by setup.sh)
 - `.github/workflows/build.yml` - CI/CD pipeline for automated builds
 
@@ -109,7 +112,12 @@ Before implementing significant changes or starting major work, the agent must:
 
 After every significant change, the agent must:
 
-1. **Check if documentation needs updates** by reviewing:
+1. **Verify the changes by building** the code:
+   - Run `./build.sh` to ensure the code compiles successfully
+   - Check for any compilation errors or warnings
+   - Only proceed if the build completes without errors
+
+2. **Check if documentation needs updates** by reviewing:
    - `README.md` - Main project documentation
    - `docs/scripts.md` - Script usage guide
    - `docs/library-management.md` - Library management guide
@@ -117,9 +125,9 @@ After every significant change, the agent must:
    - `.github/copilot-instructions.md` - This file
    - `.github/workflows/build.yml` - CI/CD pipeline
 
-2. **Update existing documentation** if changes affect documented behavior
+3. **Update existing documentation** if changes affect documented behavior
 
-3. **Before creating new documentation files**, ask the user:
+4. **Before creating new documentation files**, ask the user:
    - "Should I create a new doc file for [topic]?"
    - Wait for confirmation before creating new docs
 
@@ -138,3 +146,16 @@ After every significant change, the agent must:
 - Library management changed → Update `docs/library-management.md`
 - Workflow modified → Update `README.md` CI/CD section
 - New requirement added → Update `README.md` prerequisites
+
+### Build Verification
+
+Always verify code changes by building:
+
+```bash
+./build.sh  # Must complete successfully after code changes
+```
+
+If the build fails:
+- Review and fix compilation errors
+- Check library dependencies in `arduino-libraries.txt`
+- Verify Arduino code syntax and ESP32 compatibility
