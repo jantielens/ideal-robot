@@ -1,22 +1,22 @@
 /*
- * Home Screen (Hello LVGL)
+ * Bar Screen (Progress Bar Demo)
  * 
- * Main application screen showing:
+ * Demonstrates progress bar animation suitable for e-ink displays.
+ * Shows:
  * - Title and chip information
  * - Counter that updates periodically
  * - Progress bar cycling 0-10
  * 
  * LIFECYCLE:
- * - Shown after splash screen
+ * - Alternates with arc screen (20 seconds each)
  * - Updates every 2.5 seconds
  * - No MQTT subscriptions (yet)
- * - Stays on forever (until screen transition implemented)
  */
 
 #include "screen_base.h"
 
 // SquareLine Studio compatible globals
-lv_obj_t *ui_Screen_Home = NULL;
+lv_obj_t *ui_Screen_Bar = NULL;
 lv_obj_t *ui_Label_Hello = NULL;
 lv_obj_t *ui_Label_Chip = NULL;
 lv_obj_t *ui_Label_Counter = NULL;
@@ -30,24 +30,24 @@ static lv_style_t style_bg;
 static lv_style_t style_indic;
 
 // Screen initialization (SquareLine Studio pattern)
-void ui_Screen_Home_init(void)
+void ui_Screen_Bar_init(void)
 {
-    Serial.println("[SCREEN] Creating Home screen...");
+    Serial.println("[SCREEN] Creating Bar screen...");
     
     // Create screen
-    ui_Screen_Home = lv_obj_create(NULL);
-    lv_obj_clear_flag(ui_Screen_Home, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_bg_color(ui_Screen_Home, lv_color_white(), 0);
+    ui_Screen_Bar = lv_obj_create(NULL);
+    lv_obj_clear_flag(ui_Screen_Bar, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_color(ui_Screen_Bar, lv_color_white(), 0);
     
     // Title label
-    ui_Label_Hello = lv_label_create(ui_Screen_Home);
+    ui_Label_Hello = lv_label_create(ui_Screen_Bar);
     lv_label_set_text(ui_Label_Hello, "Hello LVGL!");
     lv_obj_set_style_text_color(ui_Label_Hello, lv_color_black(), 0);
     lv_obj_set_style_text_font(ui_Label_Hello, &lv_font_montserrat_32, 0);
     lv_obj_align(ui_Label_Hello, LV_ALIGN_TOP_MID, 0, 20);
     
     // Chip info label
-    ui_Label_Chip = lv_label_create(ui_Screen_Home);
+    ui_Label_Chip = lv_label_create(ui_Screen_Bar);
     String chip_info = String(ESP.getChipModel()) + "\n" + 
                        String(ESP.getCpuFreqMHz()) + " MHz";
     lv_label_set_text(ui_Label_Chip, chip_info.c_str());
@@ -56,7 +56,7 @@ void ui_Screen_Home_init(void)
     lv_obj_align(ui_Label_Chip, LV_ALIGN_CENTER, 0, -20);
     
     // Counter label
-    ui_Label_Counter = lv_label_create(ui_Screen_Home);
+    ui_Label_Counter = lv_label_create(ui_Screen_Bar);
     lv_label_set_text(ui_Label_Counter, "Counter: 0");
     lv_obj_set_style_text_color(ui_Label_Counter, lv_color_black(), 0);
     lv_obj_set_style_text_font(ui_Label_Counter, &lv_font_montserrat_24, 0);
@@ -76,7 +76,7 @@ void ui_Screen_Home_init(void)
     lv_style_set_radius(&style_indic, 2);
     
     // Progress bar
-    ui_ProgressBar = lv_bar_create(ui_Screen_Home);
+    ui_ProgressBar = lv_bar_create(ui_Screen_Bar);
     lv_obj_remove_style_all(ui_ProgressBar);
     lv_obj_add_style(ui_ProgressBar, &style_bg, 0);
     lv_obj_add_style(ui_ProgressBar, &style_indic, LV_PART_INDICATOR);
@@ -88,20 +88,20 @@ void ui_Screen_Home_init(void)
     // Reset counter when screen is created
     update_counter = 0;
     
-    Serial.println("[SCREEN] Home screen created");
+    Serial.println("[SCREEN] Bar screen created");
 }
 
 // Screen destruction (SquareLine Studio pattern)
-void ui_Screen_Home_destroy(void)
+void ui_Screen_Bar_destroy(void)
 {
-    Serial.println("[SCREEN] Destroying Home screen");
+    Serial.println("[SCREEN] Destroying Bar screen");
     
-    if(ui_Screen_Home) {
-        lv_obj_del(ui_Screen_Home);
+    if(ui_Screen_Bar) {
+        lv_obj_del(ui_Screen_Bar);
     }
     
     // NULL all screen variables
-    ui_Screen_Home = NULL;
+    ui_Screen_Bar = NULL;
     ui_Label_Hello = NULL;
     ui_Label_Chip = NULL;
     ui_Label_Counter = NULL;
@@ -109,7 +109,7 @@ void ui_Screen_Home_destroy(void)
 }
 
 // Periodic update (called from app.ino loop)
-void ui_Screen_Home_on_update(void)
+void ui_Screen_Bar_on_update(void)
 {
     update_counter++;
     
@@ -123,7 +123,7 @@ void ui_Screen_Home_on_update(void)
     // Update progress bar
     lv_bar_set_value(ui_ProgressBar, bar_value, LV_ANIM_OFF);
     
-    Serial.print("[UPDATE] Home screen refresh #");
+    Serial.print("[UPDATE] Bar screen refresh #");
     Serial.print(update_counter);
     Serial.print(" | Free Heap: ");
     Serial.print(ESP.getFreeHeap());
@@ -131,7 +131,7 @@ void ui_Screen_Home_on_update(void)
 }
 
 // Get screen object (for screen manager)
-lv_obj_t* ui_Screen_Home_get_obj(void)
+lv_obj_t* ui_Screen_Bar_get_obj(void)
 {
-    return ui_Screen_Home;
+    return ui_Screen_Bar;
 }

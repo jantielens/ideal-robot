@@ -12,7 +12,7 @@
  * 
  * WHAT THIS DEMO SHOWS:
  * - Multi-screen architecture with lifecycle management
- * - Splash screen (5 seconds) -> Home screen (forever)
+ * - Splash (5s) -> Arc (20s) -> Bar (20s) -> Arc (20s) -> Bar (20s)...
  * - SquareLine Studio compatible screen pattern
  * - MQTT-ready architecture (lifecycle hooks for future)
  * - Hybrid refresh strategy (partial + periodic full refresh)
@@ -37,7 +37,8 @@
 // ===== SCREEN ENUM =====
 typedef enum {
     SCREEN_SPLASH,
-    SCREEN_HOME,
+    SCREEN_ARC,
+    SCREEN_BAR,
     SCREEN_COUNT  // Total number of screens
 } screen_id_t;
 
@@ -47,11 +48,17 @@ void ui_Screen_Splash_init(void);
 void ui_Screen_Splash_destroy(void);
 lv_obj_t* ui_Screen_Splash_get_obj(void);
 
-// Home Screen
-void ui_Screen_Home_init(void);
-void ui_Screen_Home_destroy(void);
-void ui_Screen_Home_on_update(void);
-lv_obj_t* ui_Screen_Home_get_obj(void);
+// Arc Screen
+void ui_Screen_Arc_init(void);
+void ui_Screen_Arc_destroy(void);
+void ui_Screen_Arc_on_update(void);
+lv_obj_t* ui_Screen_Arc_get_obj(void);
+
+// Bar Screen
+void ui_Screen_Bar_init(void);
+void ui_Screen_Bar_destroy(void);
+void ui_Screen_Bar_on_update(void);
+lv_obj_t* ui_Screen_Bar_get_obj(void);
 
 // ===== SCREEN REGISTRY =====
 // Array of all screens with their lifecycle functions
@@ -67,14 +74,24 @@ screen_t screens[SCREEN_COUNT] = {
         .on_update = NULL,
         .screen_obj = NULL
     },
-    // Home Screen (periodic updates, no MQTT yet)
+    // Arc Screen (20 seconds, periodic updates for animation)
     {
-        .init = ui_Screen_Home_init,
-        .destroy = ui_Screen_Home_destroy,
+        .init = ui_Screen_Arc_init,
+        .destroy = ui_Screen_Arc_destroy,
         .on_activate = NULL,
         .on_deactivate = NULL,
         .on_mqtt_message = NULL,
-        .on_update = ui_Screen_Home_on_update,
+        .on_update = ui_Screen_Arc_on_update,
+        .screen_obj = NULL
+    },
+    // Bar Screen (20 seconds, periodic updates)
+    {
+        .init = ui_Screen_Bar_init,
+        .destroy = ui_Screen_Bar_destroy,
+        .on_activate = NULL,
+        .on_deactivate = NULL,
+        .on_mqtt_message = NULL,
+        .on_update = ui_Screen_Bar_on_update,
         .screen_obj = NULL
     }
 };
@@ -85,8 +102,9 @@ unsigned long screen_start_time = 0;
 
 // ===== APP STATE =====
 unsigned long lastUpdate = 0;
-const unsigned long UPDATE_INTERVAL = 2500; // Update every 2.5 seconds
+const unsigned long UPDATE_INTERVAL = 5000; // Update every 5 seconds
 const unsigned long SPLASH_DURATION = 5000; // Splash screen for 5 seconds
+const unsigned long ARC_BAR_DURATION = 20000; // Arc and Bar screens for 20 seconds each
 
 // ===== SCREEN MANAGEMENT =====
 // Load a screen by ID
@@ -105,15 +123,13 @@ void load_screen(screen_id_t screen_id)
     screen_t *old_screen = &screens[current_screen_id];
     screen_t *new_screen = &screens[screen_id];
     
+    // Don't destroy if loading the same screen for the first time
+    bool is_different_screen = (current_screen_id != screen_id) || (old_screen->screen_obj != NULL);
+    
     // Deactivate old screen (unsubscribe MQTT)
-    if(old_screen->on_deactivate) {
+    if(is_different_screen && old_screen->on_deactivate) {
         Serial.println("[SCREEN MGR] Deactivating old screen...");
         old_screen->on_deactivate();
-    }
-    
-    // Destroy old screen (free LVGL objects)
-    if(old_screen->destroy) {
-        old_screen->destroy();
     }
     
     // Initialize new screen (create LVGL objects)
@@ -124,20 +140,28 @@ void load_screen(screen_id_t screen_id)
     // Update screen_obj pointer
     if(screen_id == SCREEN_SPLASH) {
         new_screen->screen_obj = ui_Screen_Splash_get_obj();
-    } else if(screen_id == SCREEN_HOME) {
-        new_screen->screen_obj = ui_Screen_Home_get_obj();
+    } else if(screen_id == SCREEN_ARC) {
+        new_screen->screen_obj = ui_Screen_Arc_get_obj();
+    } else if(screen_id == SCREEN_BAR) {
+        new_screen->screen_obj = ui_Screen_Bar_get_obj();
+    }
+    
+    // Load screen into LVGL (make new screen active BEFORE destroying old)
+    if(new_screen->screen_obj) {
+        lv_screen_load(new_screen->screen_obj);
+        Serial.println("[SCREEN MGR] Screen loaded");
+    }
+    
+    // Destroy old screen AFTER new screen is active (avoids LVGL warning)
+    // Only if transitioning to a different screen OR reloading an existing screen
+    if(is_different_screen && old_screen->destroy) {
+        old_screen->destroy();
     }
     
     // Activate new screen (subscribe MQTT)
     if(new_screen->on_activate) {
         Serial.println("[SCREEN MGR] Activating new screen...");
         new_screen->on_activate();
-    }
-    
-    // Load screen into LVGL
-    if(new_screen->screen_obj) {
-        lv_screen_load(new_screen->screen_obj);
-        Serial.println("[SCREEN MGR] Screen loaded");
     }
     
     // Update state
@@ -178,9 +202,10 @@ void setup()
   // Initial render
   Serial.println("[LVGL] Performing initial render...");
   lv_refr_now(eink_get_display());
+  eink_full_refresh_now();
   
   Serial.println("\n[READY] System initialized");
-  Serial.println("[INFO] Screen sequence: Splash (5s) -> Home (forever)");
+  Serial.println("[INFO] Screen sequence: Splash (5s) -> Arc (20s) -> Bar (20s) -> repeat");
   Serial.print("[INFO] Updates every ");
   Serial.print(UPDATE_INTERVAL / 1000.0);
   Serial.println(" seconds with partial refresh");
@@ -198,14 +223,42 @@ void loop()
   unsigned long currentMillis = millis();
   
   // ===== SCREEN TRANSITION LOGIC =====
-  // Check if we need to transition from Splash to Home
+  // Check if we need to transition screens
   if (current_screen_id == SCREEN_SPLASH) {
+    // Splash -> Arc after 5 seconds
     if (currentMillis - screen_start_time >= SPLASH_DURATION) {
-      Serial.println("\n[APP] Splash timeout - transitioning to Home screen");
-      load_screen(SCREEN_HOME);
+      Serial.println("\n[APP] Splash timeout - transitioning to Arc screen");
+      load_screen(SCREEN_ARC);
       
       // Force full screen refresh after transition
       lv_refr_now(eink_get_display());
+      eink_full_refresh_now();
+      
+      lastUpdate = currentMillis;
+    }
+  }
+  else if (current_screen_id == SCREEN_ARC) {
+    // Arc -> Bar after 20 seconds
+    if (currentMillis - screen_start_time >= ARC_BAR_DURATION) {
+      Serial.println("\n[APP] Arc timeout - transitioning to Bar screen");
+      load_screen(SCREEN_BAR);
+      
+      // Force full screen refresh after transition
+      lv_refr_now(eink_get_display());
+      eink_full_refresh_now();
+      
+      lastUpdate = currentMillis;
+    }
+  }
+  else if (current_screen_id == SCREEN_BAR) {
+    // Bar -> Arc after 20 seconds (rotate forever)
+    if (currentMillis - screen_start_time >= ARC_BAR_DURATION) {
+      Serial.println("\n[APP] Bar timeout - transitioning to Arc screen");
+      load_screen(SCREEN_ARC);
+      
+      // Force full screen refresh after transition
+      lv_refr_now(eink_get_display());
+      eink_full_refresh_now();
       
       lastUpdate = currentMillis;
     }
@@ -231,6 +284,9 @@ void loop()
       
       // Trigger LVGL refresh
       lv_refr_now(eink_get_display());
+      
+      // Power off panel voltages to prevent fading
+      eink_poweroff();
     }
     
     lastUpdate = currentMillis;
