@@ -32,9 +32,7 @@ static lv_style_t style_indic;
 // Screen initialization (SquareLine Studio pattern)
 void ui_Screen_Bar_init(void)
 {
-    Serial.println("[SCREEN] Creating Bar screen...");
-    
-    // Create screen
+    // Create the screen
     ui_Screen_Bar = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_Screen_Bar, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(ui_Screen_Bar, lv_color_white(), 0);
@@ -87,15 +85,11 @@ void ui_Screen_Bar_init(void)
     
     // Reset counter when screen is created
     update_counter = 0;
-    
-    Serial.println("[SCREEN] Bar screen created");
 }
 
 // Screen destruction (SquareLine Studio pattern)
 void ui_Screen_Bar_destroy(void)
 {
-    Serial.println("[SCREEN] Destroying Bar screen");
-    
     if(ui_Screen_Bar) {
         lv_obj_del(ui_Screen_Bar);
     }
@@ -122,12 +116,6 @@ void ui_Screen_Bar_on_update(void)
     
     // Update progress bar
     lv_bar_set_value(ui_ProgressBar, bar_value, LV_ANIM_OFF);
-    
-    Serial.print("[UPDATE] Bar screen refresh #");
-    Serial.print(update_counter);
-    Serial.print(" | Free Heap: ");
-    Serial.print(ESP.getFreeHeap());
-    Serial.println(" bytes");
 }
 
 // Get screen object (for screen manager)

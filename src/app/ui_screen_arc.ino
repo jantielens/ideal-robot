@@ -33,9 +33,7 @@ static lv_style_t style_arc_indicator;
 // Screen initialization (SquareLine Studio pattern)
 void ui_Screen_Arc_init(void)
 {
-    Serial.println("[SCREEN] Creating Arc screen...");
-    
-    // Create screen
+    // Create the screen
     ui_Screen_Arc = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_Screen_Arc, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(ui_Screen_Arc, lv_color_white(), 0);
@@ -81,15 +79,11 @@ void ui_Screen_Arc_init(void)
     // Start at 0% (empty)
     arc_step = 0;
     lv_arc_set_value(ui_Arc_Loading, 0);
-    
-    Serial.println("[SCREEN] Arc screen created");
 }
 
 // Screen destruction (SquareLine Studio pattern)
 void ui_Screen_Arc_destroy(void)
 {
-    Serial.println("[SCREEN] Destroying Arc screen");
-    
     if(ui_Screen_Arc) {
         lv_obj_del(ui_Screen_Arc);
     }
@@ -115,12 +109,6 @@ void ui_Screen_Arc_on_update(void)
     
     // Update arc
     lv_arc_set_value(ui_Arc_Loading, percentage);
-    
-    Serial.print("[UPDATE] Arc screen step ");
-    Serial.print(arc_step);
-    Serial.print("/5 (");
-    Serial.print(percentage);
-    Serial.println("%)");
 }
 
 // Get screen object (for screen manager)

@@ -23,9 +23,7 @@ lv_obj_t *ui_Label_Splash_Chip = NULL;
 // Screen initialization (SquareLine Studio pattern)
 void ui_Screen_Splash_init(void)
 {
-    Serial.println("[SCREEN] Creating Splash screen...");
-    
-    // Create screen
+    // Create the screen
     ui_Screen_Splash = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_Screen_Splash, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_color(ui_Screen_Splash, lv_color_white(), 0);
@@ -55,15 +53,11 @@ void ui_Screen_Splash_init(void)
     lv_obj_set_style_text_font(ui_Label_Splash_Chip, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_align(ui_Label_Splash_Chip, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align(ui_Label_Splash_Chip, LV_ALIGN_BOTTOM_MID, 0, -40);
-    
-    Serial.println("[SCREEN] Splash screen created");
 }
 
 // Screen destruction (SquareLine Studio pattern)
 void ui_Screen_Splash_destroy(void)
 {
-    Serial.println("[SCREEN] Destroying Splash screen");
-    
     if(ui_Screen_Splash) {
         lv_obj_del(ui_Screen_Splash);
     }

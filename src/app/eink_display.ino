@@ -117,8 +117,7 @@ static void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px
       }
     }
 
-    bool need_full_refresh = full_refresh_pending || area_is_full_screen;
-    if (need_full_refresh) {
+    if (full_refresh_pending) {
       push_full_frame_to_display();
       partial_update_count = 0;
       full_refresh_pending = false;
@@ -185,7 +184,6 @@ void eink_poweroff()
     delay(PANEL_SETTLE_MS - elapsed);
   }
   display.powerOff();
-  Serial.println("[E-INK] Display powered off (voltages off, avoids fading)");
 }
 
 lv_display_t* eink_get_display()

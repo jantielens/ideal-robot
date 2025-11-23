@@ -102,7 +102,7 @@ unsigned long screen_start_time = 0;
 
 // ===== APP STATE =====
 unsigned long lastUpdate = 0;
-const unsigned long UPDATE_INTERVAL = 5000; // Update every 5 seconds
+const unsigned long UPDATE_INTERVAL = 2000; // Update every 5 seconds
 const unsigned long SPLASH_DURATION = 5000; // Splash screen for 5 seconds
 const unsigned long ARC_BAR_DURATION = 20000; // Arc and Bar screens for 20 seconds each
 
@@ -115,11 +115,6 @@ const unsigned long ARC_BAR_DURATION = 20000; // Arc and Bar screens for 20 seco
 // 5. Load screen into LVGL display
 void load_screen(screen_id_t screen_id)
 {
-    Serial.print("\n[SCREEN MGR] Transitioning from ");
-    Serial.print(current_screen_id);
-    Serial.print(" to ");
-    Serial.println(screen_id);
-    
     screen_t *old_screen = &screens[current_screen_id];
     screen_t *new_screen = &screens[screen_id];
     
@@ -128,7 +123,6 @@ void load_screen(screen_id_t screen_id)
     
     // Deactivate old screen (unsubscribe MQTT)
     if(is_different_screen && old_screen->on_deactivate) {
-        Serial.println("[SCREEN MGR] Deactivating old screen...");
         old_screen->on_deactivate();
     }
     
@@ -149,7 +143,6 @@ void load_screen(screen_id_t screen_id)
     // Load screen into LVGL (make new screen active BEFORE destroying old)
     if(new_screen->screen_obj) {
         lv_screen_load(new_screen->screen_obj);
-        Serial.println("[SCREEN MGR] Screen loaded");
     }
     
     // Destroy old screen AFTER new screen is active (avoids LVGL warning)
@@ -160,15 +153,12 @@ void load_screen(screen_id_t screen_id)
     
     // Activate new screen (subscribe MQTT)
     if(new_screen->on_activate) {
-        Serial.println("[SCREEN MGR] Activating new screen...");
         new_screen->on_activate();
     }
     
     // Update state
     current_screen_id = screen_id;
     screen_start_time = millis();
-    
-    Serial.println("[SCREEN MGR] Transition complete\n");
 }
 
 void setup()
@@ -202,7 +192,6 @@ void setup()
   // Initial render
   Serial.println("[LVGL] Performing initial render...");
   lv_refr_now(eink_get_display());
-  eink_full_refresh_now();
   
   Serial.println("\n[READY] System initialized");
   Serial.println("[INFO] Screen sequence: Splash (5s) -> Arc (20s) -> Bar (20s) -> repeat");
@@ -229,11 +218,6 @@ void loop()
     if (currentMillis - screen_start_time >= SPLASH_DURATION) {
       Serial.println("\n[APP] Splash timeout - transitioning to Arc screen");
       load_screen(SCREEN_ARC);
-      
-      // Force full screen refresh after transition
-      lv_refr_now(eink_get_display());
-      eink_full_refresh_now();
-      
       lastUpdate = currentMillis;
     }
   }
@@ -242,11 +226,6 @@ void loop()
     if (currentMillis - screen_start_time >= ARC_BAR_DURATION) {
       Serial.println("\n[APP] Arc timeout - transitioning to Bar screen");
       load_screen(SCREEN_BAR);
-      
-      // Force full screen refresh after transition
-      lv_refr_now(eink_get_display());
-      eink_full_refresh_now();
-      
       lastUpdate = currentMillis;
     }
   }
@@ -255,11 +234,6 @@ void loop()
     if (currentMillis - screen_start_time >= ARC_BAR_DURATION) {
       Serial.println("\n[APP] Bar timeout - transitioning to Arc screen");
       load_screen(SCREEN_ARC);
-      
-      // Force full screen refresh after transition
-      lv_refr_now(eink_get_display());
-      eink_full_refresh_now();
-      
       lastUpdate = currentMillis;
     }
   }
